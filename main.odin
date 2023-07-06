@@ -9,7 +9,6 @@ import "core:bufio"
 import "core:bytes"
 import "core:hash"
 import "core:os"
-import "core:strings"
 
 main :: proc() {
     filter := make(map[u64]struct {})
@@ -29,17 +28,15 @@ main :: proc() {
         if err != nil {
             break
         }
-        line_str := string(bytes.trim_right(line, []byte{'\r'}))
 
-        // Adding this extra hash doesn't affect overall speed.
-        // So probably the hashmap itself is slow.
-        line_hash := hash.fnv64(transmute([]u8)line_str)
+        line_hash := hash.fnv64(transmute([]u8)line)
 
         if line_hash in filter {
             continue
         } else {
+            // insertion is slow step; goes from about 4.5ms to 30ms
             filter[line_hash] = {}
-            bufio.writer_write_string(&w, line_str)
+            bufio.writer_write(&w, line)
         }
     }
     bufio.writer_flush(&w)
