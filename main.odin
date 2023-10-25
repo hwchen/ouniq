@@ -1,9 +1,10 @@
 /// Hacky uniq implementation
-/// - hard-codes the hashset capacity (will impl realloc in future if necessary)
+/// - will reallocate, but reallocation strategy is naive and not performant.
 /// - insert-only hashset
 /// - pre-hashes line into digest and stores digest instead of bytestring. This makes collisions undetectable.
 ///
 /// With this hackiness, it's pretty close to zig using StringHashMap and wyhash for digesting.
+/// For this benchmark, about 1.5x slower if starting with small capacity; equal if using large buffer.
 
 package ouniq
 
@@ -52,13 +53,16 @@ Set :: struct {
     entries: []u64,
 }
 
-set_init :: proc(set: ^Set, expected_count: int) {
-    set.entries = make([]u64, expected_count * 2) // 50% load, no realloc
+set_init :: proc(set: ^Set, capacity: int) {
+    set.entries = make([]u64, capacity)
 }
 
 // returns true if call sets entry. returns false if entry already exists
 set_insert :: proc(set: ^Set, hash: u64) -> bool {
-    if set.count + 1 >= len(set.entries) do panic("Number of entries exceeded fixed-size buffer of set")
+    // max load 50%
+    if (set.count + 1) * 2 >= len(set.entries) {
+        set_realloc(set)
+    }
     idx := hash % cast(u64)len(set.entries)
 
     for {
@@ -90,10 +94,19 @@ set_contains :: proc(set: Set, hash: u64) -> bool {
     }
 }
 
+set_realloc :: proc(set: ^Set) {
+    old_entries := set.entries
+    set.entries = make([]u64, len(old_entries) * 2)
+    for entry in old_entries {
+        set_insert(set, entry)
+    }
+    delete(old_entries)
+}
+
 @(test)
 test_seqset :: proc(t: ^testing.T) {
     set: Set
-    set_init(&set, 4)
+    set_init(&set, 2)
     set_insert(&set, 0)
     set_insert(&set, 1)
     set_insert(&set, 11)
