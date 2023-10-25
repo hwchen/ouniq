@@ -1,3 +1,6 @@
+build:
+    odin build . -o:speed
+
 benchmark:
     odin build . -o:speed && hyperfine --warmup 10 \
     'cat /usr/share/dict/words | ./ouniq' \
