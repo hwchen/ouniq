@@ -114,4 +114,5 @@ test_set :: proc(t: ^testing.T) {
 
     testing.expect(t, set_contains(set, 1))
     testing.expect(t, set_contains(set, 11))
+    testing.expect(t, !set_contains(set, 111))
 }
