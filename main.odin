@@ -3,7 +3,7 @@
 /// - insert-only hashset
 /// - pre-hashes line into digest and stores digest instead of bytestring. This makes collisions undetectable.
 ///
-/// With this hackiness, it's pretty close to zig using StringHashMap and wyhash for digesting.
+/// With this hackiness, it's pretty close to zig using HashMap and wyhash for digesting.
 /// For this benchmark, about 1.5x slower if starting with small capacity; equal if using large buffer.
 
 package ouniq
