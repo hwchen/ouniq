@@ -94,16 +94,19 @@ Set :: struct {
 }
 
 set_init :: proc(set: ^Set, capacity: int) {
+	assert((capacity & (capacity - 1)) == 0, "capacity must be a power of 2")
+
 	set.entries = make([]u64, capacity)
 }
 
 // returns true if call sets entry. returns false if entry already exists
 set_insert :: proc(set: ^Set, hash: u64) -> bool {
-	// max load 50%
-	if (set.count + 1) * 2 >= len(set.entries) {
+	// max load 80%
+	if cast(f32)set.count * 1.25 >= cast(f32)len(set.entries) {
 		set_realloc(set)
 	}
-	idx := hash % cast(u64)len(set.entries)
+	mask := u64(len(set.entries) - 1)
+	idx := hash & mask
 
 	for {
 		entry := &set.entries[idx]
@@ -115,12 +118,31 @@ set_insert :: proc(set: ^Set, hash: u64) -> bool {
 			entry^ = hash
 			return true
 		}
-		idx = (idx + 1) % cast(u64)len(set.entries)
+		idx = (idx + 1) & mask
+	}
+}
+
+set_insert_assume_capacity :: proc(set: ^Set, hash: u64) -> bool {
+	mask := u64(len(set.entries) - 1)
+	idx := hash & mask
+
+	for {
+		entry := &set.entries[idx]
+		if entry^ == hash {
+			return false
+		}
+		if entry^ == 0 { 	// TODO should actually bias, in case there's a zero-value hash
+			set.count += 1
+			entry^ = hash
+			return true
+		}
+		idx = (idx + 1) & mask
 	}
 }
 
 set_contains :: proc(set: Set, hash: u64) -> bool {
-	idx := hash % cast(u64)len(set.entries)
+	mask := u64(len(set.entries) - 1)
+	idx := hash & mask
 
 	for {
 		entry := set.entries[idx]
@@ -130,7 +152,7 @@ set_contains :: proc(set: Set, hash: u64) -> bool {
 		if entry == 0 {
 			return false
 		}
-		idx = (idx + 1) % cast(u64)len(set.entries)
+		idx = (idx + 1) & mask
 	}
 }
 
@@ -141,6 +163,21 @@ set_realloc :: proc(set: ^Set) {
 		set_insert(set, entry)
 	}
 	delete(old_entries)
+
+	old_entries = set.entries
+	set.entries = make([]u64, len(old_entries) * 2)
+
+	old_count := set.count
+	set.count = 0
+	for entry in old_entries {
+		if entry != 0 {
+			set_insert_assume_capacity(set, entry)
+		}
+		if set.count == old_count do break
+	}
+	// TODO Set stores allocator
+	delete(old_entries)
+
 }
 
 @(test)
