@@ -1,0 +1,31 @@
+config default = "build"
+
+let profile = "debug"
+
+# Pick cflags based on the build profile
+let cflags = profile | match {
+    "debug" => ["-o:minimal", "-debug"]
+    "release" => ["-o:speed"]
+    "asan-address" => ["-o:minimal", "-debug", "--sanitize=address"]
+    "%" => ""
+}
+
+build "ouniq" {
+    from "main.odin"
+    run "odin build <in> -file {cflags*} -out:<out:out-dir>"
+}
+
+build "testrun" {
+    from "main.odin"
+    run "odin build <in> -file {cflags*} -build-mode:test -out:<out:out-dir>"
+}
+
+task build {
+    build "ouniq"
+}
+
+task test {
+    let test_exe = "testrun"
+    build test_exe
+    run "<test_exe>"
+}

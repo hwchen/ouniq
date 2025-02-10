@@ -1,15 +1,15 @@
-build:
-    odin build . -o:speed
+bench:
+    werk build -Dprofile=release && poop \
+    'target/ouniq < /usr/share/dict/words' \
 
-benchmark:
-    odin build . -o:speed && hyperfine --warmup 10 \
-    'cat /usr/share/dict/words | ./ouniq' \
+hyperfine:
+    werk build -Dprofile=release && hyperfine --warmup 10 \
+    'cat /usr/share/dict/words | target/ouniq -' \
     'cat /usr/share/dict/words | zuniq -' \
     'cat /usr/share/dict/words | runiq --filter digest -' \
-    'cat /usr/share/dict/words | runiq --filter naive -'
 
 check-output:
-    odin build . -o:speed && \
+    werk build && \
     cat /usr/share/dict/words | wc -l && \
-    cat /usr/share/dict/words | ./ouniq | wc -l && \
+    cat /usr/share/dict/words | target/ouniq - | wc -l && \
     cat /usr/share/dict/words | zuniq - | wc -l
