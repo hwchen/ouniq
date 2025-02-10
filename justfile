@@ -1,6 +1,7 @@
 bench:
     werk build -Dprofile=release && poop \
-    'target/ouniq < /usr/share/dict/words' \
+    'target/ouniq /usr/share/dict/words' \
+    'zuniq /usr/share/dict/words'
 
 hyperfine:
     werk build -Dprofile=release && hyperfine --warmup 10 \

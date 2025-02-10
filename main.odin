@@ -20,9 +20,26 @@ main :: proc() {
 	filter: Set
 	set_init(&filter, 16)
 
+	if len(os.args) == 1 {
+		fmt.eprintln("Please provide a file path or '-' for stdin")
+		os.exit(1)
+	}
+	handle: os.Handle
+	path := os.args[1]
+	if path == "-" {
+		handle = os.stdin
+	} else {
+		f, err := os.open(path)
+		if err != nil {
+			fmt.eprintln("Error opening file %s: %s", path, err)
+			os.exit(1)
+		}
+		handle = f
+	}
+
 	r: bufio.Reader
 	read_stream_buf: [4096]byte
-	bufio.reader_init_with_buf(&r, os.stream_from_handle(os.stdin), read_stream_buf[:])
+	bufio.reader_init_with_buf(&r, os.stream_from_handle(handle), read_stream_buf[:])
 	defer bufio.reader_destroy(&r)
 
 	w: bufio.Writer
