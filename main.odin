@@ -17,13 +17,8 @@ import "core:strconv"
 import "core:testing"
 
 main :: proc() {
-	opts, perr := parse_opts()
-	if perr != nil {
-		fmt.eprintln("Options parsing error:", perr)
-		os.exit(1)
-	}
 	filter: Set
-	set_init(&filter, opts.initial_capacity.? or_else 16)
+	set_init(&filter, 16)
 
 	r: bufio.Reader
 	read_stream_buf: [4096]byte
@@ -44,49 +39,12 @@ main :: proc() {
 		// Use hash directly. This means there's a chance of undetected collisions.
 		hash := xxhash.XXH64(line)
 
-		if set_contains(filter, hash) {
-			continue
-		} else {
-			set_insert(&filter, hash)
+		if set_insert(&filter, hash) {
 			bufio.writer_write(&w, line)
 		}
 	}
 	bufio.writer_flush(&w)
 }
-
-
-Opts :: struct {
-	initial_capacity: Maybe(int),
-}
-
-ParseError :: enum {
-	Ok,
-	UnsupportedOption,
-	InitialCapacityNotInteger,
-	OptionMissingValue,
-}
-
-parse_opts :: proc() -> (opts: Opts, err: ParseError) {
-	for i := 1; i < len(os.args); {
-		switch os.args[i] {
-		case "--initial-capacity", "-c":
-			if i == len(os.args) - 1 {
-				// end of args. TODO if there's more flags, will need to check
-				// if next value is a flag
-				err = .OptionMissingValue;return
-			}
-			init_cap, pok := strconv.parse_int(os.args[i + 1])
-			if !pok {
-				err = .InitialCapacityNotInteger;return
-			}
-			opts.initial_capacity = init_cap
-			i += 2
-		case:
-		}
-	}
-	return
-}
-
 
 Set :: struct {
 	count:   int,
