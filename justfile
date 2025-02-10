@@ -4,7 +4,6 @@ build:
 benchmark:
     odin build . -o:speed && hyperfine --warmup 10 \
     'cat /usr/share/dict/words | ./ouniq' \
-    'cat /usr/share/dict/words | ./ouniq --initial-capacity 4096_00' \
     'cat /usr/share/dict/words | zuniq -' \
     'cat /usr/share/dict/words | runiq --filter digest -' \
     'cat /usr/share/dict/words | runiq --filter naive -'

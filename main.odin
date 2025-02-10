@@ -159,13 +159,6 @@ set_contains :: proc(set: Set, hash: u64) -> bool {
 set_realloc :: proc(set: ^Set) {
 	old_entries := set.entries
 	set.entries = make([]u64, len(old_entries) * 2)
-	for entry in old_entries {
-		set_insert(set, entry)
-	}
-	delete(old_entries)
-
-	old_entries = set.entries
-	set.entries = make([]u64, len(old_entries) * 2)
 
 	old_count := set.count
 	set.count = 0
